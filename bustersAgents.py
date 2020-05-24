@@ -344,6 +344,8 @@ class BasicAgentAA(BustersAgent):
         print "Distance nearest pac dots: ", gameState.getDistanceNearestFood()
         # Paredes del mapa
         print "Map:  \n", gameState.getWalls()
+        # nearest food del mapa
+        print "foooood:  \n", gameState.getFood()
         # Puntuacion
         print "Score: ", gameState.getScore()
 
@@ -379,17 +381,297 @@ class BasicAgentAA(BustersAgent):
 
 
 
+    # def printLineData(self, state):
+    #     """
+    #     s = str(state.getGhostPositions()) + ", " + str(state.getGhostDirections()) + ", " \
+    #            + str(state.getDistanceNearestFood)
+    #     """
+    #
+    #     s = ", ".join([
+    #         str(state.getPacmanPosition()),
+    #         str(state.getGhostPositions()),
+    #         str(state.data.ghostDistances)
+    #
+    #     ])
+    #
+    #     return s
+
+
+
+class QLearningAgent(BustersAgent):
+
+    def __init__(self, **args):
+        "Initialize Q-values"
+        BustersAgent.__init__(self, **args)
+
+        self.actions = {"north": 0, "east": 1, "south": 2, "west": 3, "stop": 4}
+        self.table_file = open("qtable.txt", "r+")
+        self.q_table = self.readQtable()
+        self.epsilon = 0.8
+        self.alpha = 0.2
+        self.discount = 0.8 #gamma
+
+    def readQtable(self):
+        "Read qtable from disc"
+        table = self.table_file.readlines()
+        q_table = []
+
+        for i, line in enumerate(table):
+            row = line.split()
+            row = [float(x) for x in row]
+            q_table.append(row)
+
+        return q_table
+
+    def writeQtable(self):
+        "Write qtable to disc"
+        self.table_file.seek(0)
+        self.table_file.truncate()
+
+        for line in self.q_table:
+            for item in line:
+                self.table_file.write(str(item) + " ")
+            self.table_file.write("\n")
+
+    def __del__(self):
+        "Destructor. Invokation at the end of each episode"
+        self.writeQtable()
+        self.table_file.close()
+
+    def computePosition(self, state): #esto va a ser para mapear la tupla a cada row
+        """
+        Compute the row of the qtable for a given state.
+        For instance, the state (3,1) is the row 7
+        """
+        if
+
+        return state[0] + state[1] * 3 + state[2]*9 + state[3]*18
+
+        #tupla_state = (NearestH, NearestV, hor, ver, free_move)
+    def getQValue(self, state, action):
+
+        """
+          Returns Q(state,action)
+          Should return 0.0 if we have never seen a state
+          or the Q node value otherwise
+        """
+        position = self.computePosition(state)
+        action_column = self.actions[action]
+
+        return self.q_table[position][action_column]
+
+    def computeValueFromQValues(self, state):
+        """
+          Returns max_action Q(state,action)
+          where the max is over legal actions.  Note that if
+          there are no legal actions, which is the case at the
+          terminal state, you should return a value of 0.0.
+        """ 
+        #returna el valor maximo de la row
+        legalActions = state.getLegalActions(0)
+        if len(legalActions) == 0:
+            return 0
+        return max(self.q_table[self.computePosition(state)])
+
+    def computeActionFromQValues(self, state):
+        """
+          Compute the best action to take in a state.  Note that if there
+          are no legal actions, which is the case at the terminal state,
+          you should return None.
+        """
+        legalActions = state.getLegalActions(0)
+        if len(legalActions) == 0:
+            return None
+
+        best_actions = [legalActions[0]]
+        best_value = self.getQValue(state, legalActions[0])
+        for action in legalActions:
+            value = self.getQValue(state, action)
+            if value == best_value:
+                best_actions.append(action)
+            if value > best_value:
+                best_actions = [action]
+                best_value = value
+
+        return random.choice(best_actions)
+
+    def getAction(self, state):
+        """
+          Compute the action to take in the current state.  With
+          probability self.epsilon, we should take a random action and
+          take the best policy action otherwise.  Note that if there are
+          no legal actions, which is the case at the terminal state, you
+          should choose None as the action.
+        """
+
+        # Pick Action
+        legalActions = state.getLegalActions(0)
+        action = None
+
+        if len(legalActions) == 0:
+            return action
+
+        flip = util.flipCoin(self.epsilon)
+
+        if flip:
+            return random.choice(legalActions)
+        return self.getPolicy(state)
+
+    def update(self, state, action, nextState, reward):
+        """
+          The parent class calls this to observe a
+          state = action => nextState and reward transition.
+          You should do your Q-Value update here
+              Good Terminal state -> reward 1
+              Bad Terminal state -> reward -1
+              Otherwise -> reward 0
+              Q-Learning update:
+              if terminal_state:
+                Q(state,action) <- (1-self.alpha) Q(state,action) + self.alpha * (r + 0)
+              else:
+                Q(state,action) <- (1-self.alpha) Q(state,action) + self.alpha * (r + self.discount * max a' Q(nextState, a'))
+        """
+        "*** YOUR CODE HERE ***"
+        position = self.computePosition(state) #selects row from qtable
+        action_num = self.actions.get(action) #selects column
+        legalActions = state.getLegalActions(0)
+
+        if len(legalActions) == 1:
+            self.q_table[position][action_num] = (1 - self.alpha) * self.q_table[position][action_num] + \
+                                                 self.alpha * (reward + 0)
+        else:
+            self.q_table[position][action_num] = (1 - self.alpha) * self.q_table[position][action_num] + \
+                                                 self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState))
+
+    def getPolicy(self, state):
+        "Return the best action in the qtable for a given state"
+        return self.computeActionFromQValues(state)
+
+    def getValue(self, state):
+        "Return the highest q value for a given state"
+        return self.computeValueFromQValues(state)
+
+
     def printLineData(self, state):
-        """
-        s = str(state.getGhostPositions()) + ", " + str(state.getGhostDirections()) + ", " \
-               + str(state.getDistanceNearestFood)
-        """
 
-        s = ", ".join([
-            str(state.getPacmanPosition()),
-            str(state.getGhostPositions()),
-            str(state.data.ghostDistances)
+        #here we create NearestH and NearestV and free move
+        free_move = 0
+        if state.getNumFood() > 0:
+            minDistance = 900000
+            pacmanPosition = state.getPacmanPosition()
+            for i in range(state.data.layout.width):
+                for j in range(state.data.layout.height):
+                    if state.hasFood(i, j):
+                        foodPosition = i, j
+                        distance = util.manhattanDistance(pacmanPosition, foodPosition)
+                        if distance < minDistance:
+                            NearestH = i-pacmanPosition[0]
+                            NearestV = j-pacmanPosition[1]
 
-        ])
+            if NearestV == 0:
+                pos = range(1,abs(NearestH))
+                sign = 1
+                if NearestH < 0:
+                    sign *= -1
+                pos = [i*sign for i in pos]
+                check_pos = 0
+                for i in pos:
+                    check_pos = state.hasWall(pacmanPosition[0]+i, pacmanPosition[1])
+                    if check_pos is "T":
+                        free_move = 0
+                        break
+                    else:
+                        free_move = 2+1*sign #1 for left, 3 for right
+            elif NearestH == 0:
+                pos = range(1,abs(NearestV))
+                sign = 1
+                if NearestV < 0:
+                    sign *= -1
+                pos = [i*sign for i in pos]
+                check_pos = 0
+                for i in pos:
+                    check_pos = state.hasWall(pacmanPosition[0], pacmanPosition[1]+i)
+                    if check_pos is "T":
+                        free_move =  0
+                        break
+                    else:
+                        free_move = 3+1*sign #2 for down, 4 for up
 
-        return s
+        else:
+            NearestH = closest_ghost(state)[0] - state.getPacmanPosition()[0]
+            NearestV = closest_ghost(state)[1] - state.getPacmanPosition()[1]
+
+            if NearestV == 0:
+                pos = range(1, abs(NearestH))
+                sign = 1
+                if NearestH < 0:
+                    sign *= -1
+                pos = [i*sign for i in pos]
+                check_pos = 0
+                for i in pos:
+                    check_pos = state.hasWall(state.getPacmanPosition()[0]+i, state.getPacmanPosition()[1])
+                    if check_pos is "T":
+                        free_move =  0
+                        break
+                    else:
+                        free_move = 2+1*sign #1 for left, 3 for right
+            elif NearestH == 0:
+                pos = range(1, abs(NearestV))
+                sign = 1
+                if NearestV < 0:
+                    sign *= -1
+                pos = [i*sign for i in pos]
+                check_pos = 0
+                for i in pos:
+                    check_pos = state.hasWall(state.getPacmanPosition()[0], state.getPacmanPosition()[1]+i)
+                    if check_pos is "T":
+                        free_move =  0
+                        break
+                    else:
+                        free_move = 3+1*sign #2 for down, 4 for up
+
+
+
+        #Here we create hor and ver
+        if NearestH > 0:
+            NearestH = 1 #to the right
+        elif NearestH < 0:
+            NearestH = 2 #to the left
+        else:
+            NearestH = 0 #exact axis
+
+        if NearestV > 0:
+            NearestV = 1 #up
+        elif NearestV < 0:
+            NearestV = 2 #down
+        else:
+            NearestV = 0 #exact axis
+
+
+        hor = 0
+        if NearestH == 1:
+            if "East" in state.getLegalPacmanActions():
+                hor = 1
+
+        elif NearestH == 2:
+            if "West" in state.getLegalPacmanActions():
+                hor = 1
+
+        ver = 0
+        if NearestV == 1:
+            if "North" in state.getLegalPacmanActions():
+                ver = 1
+
+        elif NearestV == 2:
+            if "South" in state.getLegalPacmanActions():
+                ver = 1
+
+
+
+        tupla_state = (NearestH, NearestV, hor, ver, free_move)
+
+        return tupla_state
+
+
+    def scorito(self,state):
+        return state.getScore()

@@ -683,7 +683,11 @@ class Game:
                     self.unmute()
                     return
             else:
+                ############# update?? ##########
                 action = agent.getAction(observation)
+                if agentIndex == 0:
+                    pacman_action = action #"North","West"... string
+
             self.unmute()
 
             # Execute the action
@@ -700,12 +704,38 @@ class Game:
                 self.state = self.state.generateSuccessor( agentIndex, action )
 
 
-            #METO AQUI LA FUNCIOOOOOON
-            if hasattr(agent, "printLineData"):
+            # #METO AQUI LA FUNCIOOOOOON
+            # if hasattr(agent, "printLineData"):
+            #
+            #     with open("data.txt", "a") as infile:
+            #         infile.write(agent.printLineData(self.state)+"\n")
 
-                with open("data.txt", "a") as infile:
-                    infile.write(agent.printLineData(self.state)+"\n")
 
+
+            if hasattr(agent, "update"):
+
+                if step < 6:    #first tick
+                    next_state = agent.printLineData(self.state) #(0,1,2,34,4)
+                    next_score = agent.scorito(self.state)
+
+                elif step > 5:  #second and next ticks
+                    state = state_prev
+                    next_state = agent.printLineData(self.state) #(0,1,2,34,4)
+                    next_score = agent.scorito(self.state)
+
+                    reward = next_score - prev_score
+                    if reward == 199:
+                        reward = 50
+                    elif reward == 99:
+                        reward = 100
+                    else:
+                        reward = 0
+
+                    state.update(state, pacman_action, next_state, reward)
+
+
+                state_prev = next_state
+                prev_score = next_score
 
 
 
@@ -738,3 +768,5 @@ class Game:
                     self.unmute()
                     return
         self.display.finish()
+
+
