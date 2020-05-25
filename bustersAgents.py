@@ -424,7 +424,7 @@ class QLearningAgent(BustersAgent):
         self.actions = {"North": 0, "East": 1, "South": 2, "West": 3}
         self.table_file = open("qtable.txt", "r+")
         self.q_table = self.readQtable()
-        self.epsilon = 0.0
+        self.epsilon = 0.3
         self.alpha = 0.25
         self.discount = 0.8 #gamma
 
@@ -434,6 +434,7 @@ class QLearningAgent(BustersAgent):
         q_table = []
 
         for i, line in enumerate(table):
+
             row = line.split()
             row = [float(x) for x in row]
             q_table.append(row)
