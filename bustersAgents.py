@@ -428,7 +428,8 @@ class QLearningAgent(BustersAgent):
         self.actions = {"North": 0, "East": 1, "South": 2, "West": 3}
         self.table_file = open("qtable.txt", "r+")
         self.q_table = self.readQtable()
-        self.epsilon = 0.9
+        self.epsilon = 0.0
+
         self.alpha = 0.25
         self.discount = 0.8 #gamma
 
@@ -577,6 +578,9 @@ class QLearningAgent(BustersAgent):
             self.q_table[position][action_num] = (1 - self.alpha) * self.q_table[position][action_num] + \
                                                  self.alpha * (reward + self.discount * self.computeValueFromQValues(gameState,nextState))
 
+
+
+
     def getPolicy(self, gameState,tuplaState):
         "Return the best action in the qtable for a given state"
         return self.computeActionFromQValues(gameState,tuplaState)
@@ -598,7 +602,10 @@ class QLearningAgent(BustersAgent):
                     if state.hasFood(i, j):
                         foodPosition = i, j
 
+                        # distlayout = distanceCalculator.computeDistances(state.data.layout)
+                        # distance = distanceCalculator.getDistanceOnGrid(distlayout, state.getPacmanPosition(), (i, j))
                         distance = distancer.getDistance(state.getPacmanPosition(), (i, j))
+
                         if distance < minDistance:
                             NearestH = i-pacmanPosition[0]
                             NearestV = j-pacmanPosition[1]
@@ -646,7 +653,7 @@ class QLearningAgent(BustersAgent):
                 for i in pos:
                     check_pos = state.hasWall(state.getPacmanPosition()[0]+i, state.getPacmanPosition()[1])
                     if check_pos:
-                        free_move =  0
+                        free_move = 0
                         break
                     else:
                         free_move = 2+1*sign #1 for left, 3 for right

@@ -763,6 +763,7 @@ class Game:
                     tuplaState = state_prev
                     next_state = agent.printLineData(self.state)
 
+                    distlayout = distanceCalculator.computeDistances(self.state.data.layout)
                     #checking pacman pos and nearest thing pos to use with distancer
                     pacman_next_position = self.state.getPacmanPosition()
                     if self.state.getNumFood() > 0:
@@ -770,11 +771,13 @@ class Game:
                     else:
                         nearest_next_position = closest_ghost(self.state)
 
-                    distancer = distanceCalculator.Distancer(self.state.data.layout)
 
                     if nearest_next_position != (-1, -1):
-                        prevDistance = distancer.getDistance(pacman_position, nearest_position)
-                        nextDistance = distancer.getDistance(pacman_next_position, nearest_next_position)
+                        # tot_dist = distanceCalculator.getDistanceOnGrid(distlayout,pacman_position,nearest_position)
+                        # man_dist = manhattanDistance(pacman_position, nearest_position)
+
+                        prevDistance = distanceCalculator.getDistanceOnGrid(distlayout,pacman_position, nearest_position)
+                        nextDistance = distanceCalculator.getDistanceOnGrid(distlayout, pacman_next_position, nearest_next_position)
                         dist_reward = prevDistance - nextDistance
 
                         next_score = agent.scorito(self.state)
@@ -790,7 +793,7 @@ class Game:
                         if dist_reward > 0:
                             reward += 100
                         elif dist_reward <= 0:
-                            reward -= 110
+                            reward -= 200
 
 
                     else:
