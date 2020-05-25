@@ -18,6 +18,7 @@ from game import Directions
 from keyboardAgents import KeyboardAgent
 import inference
 import busters
+import distanceCalculator
 
 class NullGraphics:
     "Placeholder for graphics"
@@ -289,6 +290,9 @@ def closest_ghost(gameState):
 
     return closest_ghostt
 
+
+
+
 def closest_food(gameState):
 
     minDistance = 900000
@@ -424,7 +428,7 @@ class QLearningAgent(BustersAgent):
         self.actions = {"North": 0, "East": 1, "South": 2, "West": 3}
         self.table_file = open("qtable.txt", "r+")
         self.q_table = self.readQtable()
-        self.epsilon = 0.3
+        self.epsilon = 1
         self.alpha = 0.25
         self.discount = 0.8 #gamma
 
@@ -583,7 +587,7 @@ class QLearningAgent(BustersAgent):
 
 
     def printLineData(self, state):
-
+        distancer = distanceCalculator.Distancer(state.data.layout)
         #here we create NearestH and NearestV and free move
         free_move = 0
         if state.getNumFood() > 0:
@@ -593,7 +597,8 @@ class QLearningAgent(BustersAgent):
                 for j in range(state.data.layout.height):
                     if state.hasFood(i, j):
                         foodPosition = i, j
-                        distance = util.manhattanDistance(pacmanPosition, foodPosition)
+
+                        distance = distancer.getDistance(state.getPacmanPosition(), (i, j))
                         if distance < minDistance:
                             NearestH = i-pacmanPosition[0]
                             NearestV = j-pacmanPosition[1]
@@ -607,7 +612,7 @@ class QLearningAgent(BustersAgent):
                 check_pos = 0
                 for i in pos:
                     check_pos = state.hasWall(pacmanPosition[0]+i, pacmanPosition[1])
-                    if check_pos is "T":
+                    if check_pos:
                         free_move = 0
                         break
                     else:
@@ -621,13 +626,13 @@ class QLearningAgent(BustersAgent):
                 check_pos = 0
                 for i in pos:
                     check_pos = state.hasWall(pacmanPosition[0], pacmanPosition[1]+i)
-                    if check_pos is "T":
-                        free_move =  0
+                    if check_pos:
+                        free_move = 0
                         break
                     else:
                         free_move = 3+1*sign #2 for down, 4 for up
 
-        else:
+        else: #for ghosts
             NearestH = closest_ghost(state)[0] - state.getPacmanPosition()[0]
             NearestV = closest_ghost(state)[1] - state.getPacmanPosition()[1]
 
@@ -640,13 +645,14 @@ class QLearningAgent(BustersAgent):
                 check_pos = 0
                 for i in pos:
                     check_pos = state.hasWall(state.getPacmanPosition()[0]+i, state.getPacmanPosition()[1])
-                    if check_pos is "T":
+                    if check_pos:
                         free_move =  0
                         break
                     else:
                         free_move = 2+1*sign #1 for left, 3 for right
             elif NearestH == 0:
                 pos = range(1, abs(NearestV))
+
                 sign = 1
                 if NearestV < 0:
                     sign *= -1
@@ -654,8 +660,10 @@ class QLearningAgent(BustersAgent):
                 check_pos = 0
                 for i in pos:
                     check_pos = state.hasWall(state.getPacmanPosition()[0], state.getPacmanPosition()[1]+i)
-                    if check_pos is "T":
-                        free_move =  0
+
+
+                    if check_pos:
+                        free_move = 0
                         break
                     else:
                         free_move = 3+1*sign #2 for down, 4 for up
