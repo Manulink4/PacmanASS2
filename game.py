@@ -811,7 +811,7 @@ class Game:
                         else:
                             reward = 0
 
-
+                    print(tuplaState)
                     agent.update(self.state, tuplaState, pacman_action, next_state, reward)
 
 

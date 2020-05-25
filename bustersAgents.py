@@ -429,8 +429,7 @@ class QLearningAgent(BustersAgent):
         self.table_file = open("qtable.txt", "r+")
         self.q_table = self.readQtable()
         self.epsilon = 0.0
-
-        self.alpha = 0.25
+        self.alpha = 0.0
         self.discount = 0.8 #gamma
 
     def readQtable(self):
@@ -604,14 +603,17 @@ class QLearningAgent(BustersAgent):
 
                         # distlayout = distanceCalculator.computeDistances(state.data.layout)
                         # distance = distanceCalculator.getDistanceOnGrid(distlayout, state.getPacmanPosition(), (i, j))
-                        distance = distancer.getDistance(state.getPacmanPosition(), (i, j))
+                        # distance = distancer.getDistance(state.getPacmanPosition(), (i, j))
+                        distance = abs(state.getPacmanPosition()[0] - i) + abs(state.getPacmanPosition()[1] - j)
 
                         if distance < minDistance:
                             NearestH = i-pacmanPosition[0]
                             NearestV = j-pacmanPosition[1]
+                            print("nearests",NearestH,NearestV, distance)
+                            minDistance = distance
 
             if NearestV == 0:
-                pos = range(1,abs(NearestH))
+                pos = range(0,abs(NearestH))
                 sign = 1
                 if NearestH < 0:
                     sign *= -1
@@ -619,32 +621,36 @@ class QLearningAgent(BustersAgent):
                 check_pos = 0
                 for i in pos:
                     check_pos = state.hasWall(pacmanPosition[0]+i, pacmanPosition[1])
+                    print("checkpos1", check_pos)
                     if check_pos:
                         free_move = 0
                         break
                     else:
                         free_move = 2+1*sign #1 for left, 3 for right
             elif NearestH == 0:
-                pos = range(1,abs(NearestV))
+                pos = range(0,abs(NearestV))
                 sign = 1
                 if NearestV < 0:
                     sign *= -1
                 pos = [i*sign for i in pos]
                 check_pos = 0
+                print("pos", pos)
                 for i in pos:
                     check_pos = state.hasWall(pacmanPosition[0], pacmanPosition[1]+i)
+                    print("checkpos2", check_pos)
                     if check_pos:
                         free_move = 0
                         break
                     else:
                         free_move = 3+1*sign #2 for down, 4 for up
+                        print("free move",free_move)
 
         else: #for ghosts
             NearestH = closest_ghost(state)[0] - state.getPacmanPosition()[0]
             NearestV = closest_ghost(state)[1] - state.getPacmanPosition()[1]
 
             if NearestV == 0:
-                pos = range(1, abs(NearestH))
+                pos = range(0, abs(NearestH))
                 sign = 1
                 if NearestH < 0:
                     sign *= -1
@@ -658,7 +664,7 @@ class QLearningAgent(BustersAgent):
                     else:
                         free_move = 2+1*sign #1 for left, 3 for right
             elif NearestH == 0:
-                pos = range(1, abs(NearestV))
+                pos = range(0, abs(NearestV))
 
                 sign = 1
                 if NearestV < 0:
@@ -667,8 +673,6 @@ class QLearningAgent(BustersAgent):
                 check_pos = 0
                 for i in pos:
                     check_pos = state.hasWall(state.getPacmanPosition()[0], state.getPacmanPosition()[1]+i)
-
-
                     if check_pos:
                         free_move = 0
                         break
