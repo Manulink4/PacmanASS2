@@ -289,6 +289,23 @@ def closest_ghost(gameState):
 
     return closest_ghostt
 
+def closest_food(gameState):
+
+    minDistance = 900000
+    pacmanPosition = gameState.getPacmanPosition()
+    for i in range(gameState.data.layout.width):
+        for j in range(gameState.data.layout.height):
+            if gameState.hasFood(i, j):
+                foodPosition = i, j
+                distance = util.manhattanDistance(pacmanPosition, foodPosition)
+                if distance < minDistance:
+                    minDistance = distance
+                    food = (i, j)
+    return food
+
+
+
+
 
 class BasicAgentAA(BustersAgent):
 
@@ -407,8 +424,8 @@ class QLearningAgent(BustersAgent):
         self.actions = {"North": 0, "East": 1, "South": 2, "West": 3}
         self.table_file = open("qtable.txt", "r+")
         self.q_table = self.readQtable()
-        self.epsilon = 0.9
-        self.alpha = 0.1
+        self.epsilon = 0.0
+        self.alpha = 0.25
         self.discount = 0.8 #gamma
 
     def readQtable(self):
@@ -682,3 +699,4 @@ class QLearningAgent(BustersAgent):
 
     def scorito(self,state):
         return state.getScore()
+

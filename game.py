@@ -20,14 +20,46 @@
 # John DeNero (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
 
 from util import *
+from util import manhattanDistance
 import time, os
 import traceback
 import sys
 import distanceCalculator
-import bustersAgents
+
 #######################
 # Parts worth reading #
 #######################
+
+def closest_ghost(gameState):
+    dist = gameState.data.ghostDistances
+    alive = gameState.getLivingGhosts()[1:]
+
+    closest_ghostt = (-1, -1)
+    min_dist = 999999999999
+
+    for i, ghost in enumerate(alive):
+        if dist[i] < min_dist and alive[i]:
+            min_dist = dist[i]
+            closest_ghostt = gameState.getGhostPositions()[i]
+
+    return closest_ghostt
+
+def closest_food(gameState):
+
+    minDistance = 900000
+    pacmanPosition = gameState.getPacmanPosition()
+    for i in range(gameState.data.layout.width):
+        for j in range(gameState.data.layout.height):
+            if gameState.hasFood(i, j):
+                foodPosition = i, j
+                distance = manhattanDistance(pacmanPosition, foodPosition)
+                if distance < minDistance:
+                    minDistance = distance
+                    food = (i, j)
+    return food
+
+
+
 
 class Agent:
     """
@@ -684,10 +716,11 @@ class Game:
                     self.unmute()
                     return
             else:
-                ############# update?? ##########
+                ############# update?? ###############################################################################################################################
                 action = agent.getAction(observation)
                 if agentIndex == 0:
                     pacman_action = action #"North","West"... string
+
 
             self.unmute()
 
@@ -705,7 +738,7 @@ class Game:
                 self.state = self.state.generateSuccessor( agentIndex, action )
 
 
-            # #METO AQUI LA FUNCIOOOOOON
+            # #METO AQUI LA FUNCIOOOOOON printlinedata
             # if hasattr(agent, "printLineData"):
             #
             #     with open("data.txt", "a") as infile:
@@ -719,36 +752,67 @@ class Game:
                     next_state = agent.printLineData(self.state)
                     next_score = agent.scorito(self.state)
 
+                    pacman_next_position = self.state.getPacmanPosition()
+                    if self.state.getNumFood() > 0:
+                        nearest_next_position = closest_food(self.state)
+                    else:
+                        nearest_next_position = closest_ghost(self.state)
+
                 elif step > 5:  #second and next ticks
+                    #creating the tuples
                     tuplaState = state_prev
                     next_state = agent.printLineData(self.state)
 
+                    #checking pacman pos and nearest thing pos to use with distancer
                     pacman_next_position = self.state.getPacmanPosition()
-                    nearest_next_position = bustersAgents.closest_ghost(next_state)
-                    nearest_next_position = ##
-                    next_score = agent.scorito(self.state)
-
-                    #TODO
-                    distancer = distanceCalculator.Distancer(self.state.data.layout)
-                    distancer.getDistance((1, 1), (10, 10))
-
-                    prevDistance = distancer.getDistance(pacman_position,nearest_position)
-                    nextDistance = distancer.getDistance(pacman_next_position,nearest_next_position)
-
-
-                    reward = next_score - prev_score
-                    if reward == 199:
-                        reward = 50
-                    elif reward == 99:
-                        reward = 100
+                    if self.state.getNumFood() > 0:
+                        nearest_next_position = closest_food(self.state)
                     else:
-                        reward = 0
+                        nearest_next_position = closest_ghost(self.state)
+
+                    distancer = distanceCalculator.Distancer(self.state.data.layout)
+
+                    if nearest_next_position != (-1, -1):
+                        prevDistance = distancer.getDistance(pacman_position, nearest_position)
+                        nextDistance = distancer.getDistance(pacman_next_position, nearest_next_position)
+                        dist_reward = prevDistance - nextDistance
+
+                        next_score = agent.scorito(self.state)
+                        reward = next_score - prev_score
+
+                        if reward == 199:
+                            reward = 50
+                        elif reward == 99:
+                            reward = 100
+                        else:
+                            reward = 0
+
+                        if dist_reward > 0:
+                            reward += 10
+                        elif dist_reward <= 0:
+                            reward -= 10
+                    else:
+                        prevDistance = 0
+                        nextDistance = 0
+                        dist_reward = prevDistance - nextDistance
+
+                        next_score = agent.scorito(self.state)
+                        reward = next_score - prev_score
+
+                        if reward == 199:
+                            reward = 50
+                        elif reward == 99:
+                            reward = 100
+                        else:
+                            reward = 0
+
 
                     agent.update(self.state, tuplaState, pacman_action, next_state, reward)
 
 
                 state_prev = next_state
                 pacman_position = pacman_next_position
+                nearest_position = nearest_next_position
                 prev_score = next_score
 
 
