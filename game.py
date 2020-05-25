@@ -781,16 +781,18 @@ class Game:
                         reward = next_score - prev_score
 
                         if reward == 199:
-                            reward = 50
-                        elif reward == 99:
                             reward = 100
+                        elif reward == 99:
+                            reward = 150
                         else:
                             reward = 0
 
                         if dist_reward > 0:
-                            reward += 10
+                            reward += 50
                         elif dist_reward <= 0:
-                            reward -= 10
+                            reward -= 50
+
+
                     else:
                         prevDistance = 0
                         nextDistance = 0
@@ -800,9 +802,9 @@ class Game:
                         reward = next_score - prev_score
 
                         if reward == 199:
-                            reward = 50
-                        elif reward == 99:
                             reward = 100
+                        elif reward == 99:
+                            reward = 150
                         else:
                             reward = 0
 
