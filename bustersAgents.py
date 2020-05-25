@@ -99,9 +99,9 @@ class BustersAgent:
         #self.display.updateDistributions(self.ghostBeliefs)
         return self.chooseAction(gameState)
 
-    def chooseAction(self, gameState):
-        "By default, a BustersAgent just stops.  This should be overridden."
-        return Directions.STOP
+    # def chooseAction(self, gameState):
+    #     "By default, a BustersAgent just stops.  This should be overridden."
+    #     return Directions.STOP
 
 class BustersKeyboardAgent(BustersAgent, KeyboardAgent):
     "An agent controlled by the keyboard that displays beliefs about ghost positions."
@@ -404,11 +404,11 @@ class QLearningAgent(BustersAgent):
         "Initialize Q-values"
         BustersAgent.__init__(self, **args)
 
-        self.actions = {"north": 0, "east": 1, "south": 2, "west": 3, "stop": 4}
+        self.actions = {"North": 0, "East": 1, "South": 2, "West": 3}
         self.table_file = open("qtable.txt", "r+")
         self.q_table = self.readQtable()
-        self.epsilon = 0.8
-        self.alpha = 0.2
+        self.epsilon = 0.9
+        self.alpha = 0.1
         self.discount = 0.8 #gamma
 
     def readQtable(self):
@@ -438,29 +438,36 @@ class QLearningAgent(BustersAgent):
         self.writeQtable()
         self.table_file.close()
 
-    def computePosition(self, state): #esto va a ser para mapear la tupla a cada row
+    def computePosition(self, tuplaState): #esto va a ser para mapear la tupla a cada row
         """
         Compute the row of the qtable for a given state.
         For instance, the state (3,1) is the row 7
         """
-        if
+        if tuplaState[4] == 1:
+            return 36
+        elif tuplaState[4] == 2:
+            return 37
+        elif tuplaState[4] == 3:
+            return 38
+        elif tuplaState[4] == 4:
+            return 39
 
-        return state[0] + state[1] * 3 + state[2]*9 + state[3]*18
+        return tuplaState[0] + tuplaState[1] * 3 + tuplaState[2]*9 + tuplaState[3]*18
 
-        #tupla_state = (NearestH, NearestV, hor, ver, free_move)
-    def getQValue(self, state, action):
+
+    def getQValue(self,gameState ,tuplaState, action):
 
         """
           Returns Q(state,action)
           Should return 0.0 if we have never seen a state
           or the Q node value otherwise
         """
-        position = self.computePosition(state)
+        position = self.computePosition(tuplaState)
         action_column = self.actions[action]
 
         return self.q_table[position][action_column]
 
-    def computeValueFromQValues(self, state):
+    def computeValueFromQValues(self, gameState, tuplaState):
         """
           Returns max_action Q(state,action)
           where the max is over legal actions.  Note that if
@@ -468,25 +475,27 @@ class QLearningAgent(BustersAgent):
           terminal state, you should return a value of 0.0.
         """ 
         #returna el valor maximo de la row
-        legalActions = state.getLegalActions(0)
+        legalActions = gameState.getLegalActions(0)
         if len(legalActions) == 0:
             return 0
-        return max(self.q_table[self.computePosition(state)])
+        return max(self.q_table[self.computePosition(tuplaState)])
 
-    def computeActionFromQValues(self, state):
+    def computeActionFromQValues(self, gameState,tuplaState):
         """
           Compute the best action to take in a state.  Note that if there
           are no legal actions, which is the case at the terminal state,
           you should return None.
         """
-        legalActions = state.getLegalActions(0)
+        legalActions = gameState.getLegalActions(0)
+        if "Stop" in legalActions:
+            legalActions.remove("Stop")
         if len(legalActions) == 0:
             return None
 
         best_actions = [legalActions[0]]
-        best_value = self.getQValue(state, legalActions[0])
+        best_value = self.getQValue(gameState, tuplaState, legalActions[0])
         for action in legalActions:
-            value = self.getQValue(state, action)
+            value = self.getQValue(gameState, tuplaState, action)
             if value == best_value:
                 best_actions.append(action)
             if value > best_value:
@@ -495,7 +504,7 @@ class QLearningAgent(BustersAgent):
 
         return random.choice(best_actions)
 
-    def getAction(self, state):
+    def chooseAction(self, gameState):
         """
           Compute the action to take in the current state.  With
           probability self.epsilon, we should take a random action and
@@ -503,9 +512,12 @@ class QLearningAgent(BustersAgent):
           no legal actions, which is the case at the terminal state, you
           should choose None as the action.
         """
-
+        tuplaState = self.printLineData(gameState)
         # Pick Action
-        legalActions = state.getLegalActions(0)
+        legalActions = gameState.getLegalActions(0)
+        if "Stop" in legalActions:
+            legalActions.remove("Stop")
+
         action = None
 
         if len(legalActions) == 0:
@@ -515,9 +527,9 @@ class QLearningAgent(BustersAgent):
 
         if flip:
             return random.choice(legalActions)
-        return self.getPolicy(state)
+        return self.getPolicy(gameState,tuplaState)
 
-    def update(self, state, action, nextState, reward):
+    def update(self, gameState, tuplaState, action, nextState, reward):
         """
           The parent class calls this to observe a
           state = action => nextState and reward transition.
@@ -532,20 +544,20 @@ class QLearningAgent(BustersAgent):
                 Q(state,action) <- (1-self.alpha) Q(state,action) + self.alpha * (r + self.discount * max a' Q(nextState, a'))
         """
         "*** YOUR CODE HERE ***"
-        position = self.computePosition(state) #selects row from qtable
+        position = self.computePosition(tuplaState) #selects row from qtable
         action_num = self.actions.get(action) #selects column
-        legalActions = state.getLegalActions(0)
+        legalActions = gameState.getLegalActions(0)
 
         if len(legalActions) == 1:
             self.q_table[position][action_num] = (1 - self.alpha) * self.q_table[position][action_num] + \
                                                  self.alpha * (reward + 0)
         else:
             self.q_table[position][action_num] = (1 - self.alpha) * self.q_table[position][action_num] + \
-                                                 self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState))
+                                                 self.alpha * (reward + self.discount * self.computeValueFromQValues(gameState,nextState))
 
-    def getPolicy(self, state):
+    def getPolicy(self, gameState,tuplaState):
         "Return the best action in the qtable for a given state"
-        return self.computeActionFromQValues(state)
+        return self.computeActionFromQValues(gameState,tuplaState)
 
     def getValue(self, state):
         "Return the highest q value for a given state"
@@ -652,21 +664,16 @@ class QLearningAgent(BustersAgent):
         if NearestH == 1:
             if "East" in state.getLegalPacmanActions():
                 hor = 1
-
         elif NearestH == 2:
             if "West" in state.getLegalPacmanActions():
                 hor = 1
-
         ver = 0
         if NearestV == 1:
             if "North" in state.getLegalPacmanActions():
                 ver = 1
-
         elif NearestV == 2:
             if "South" in state.getLegalPacmanActions():
                 ver = 1
-
-
 
         tupla_state = (NearestH, NearestV, hor, ver, free_move)
 

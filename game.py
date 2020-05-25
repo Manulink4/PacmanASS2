@@ -23,7 +23,8 @@ from util import *
 import time, os
 import traceback
 import sys
-
+import distanceCalculator
+import bustersAgents
 #######################
 # Parts worth reading #
 #######################
@@ -715,13 +716,25 @@ class Game:
             if hasattr(agent, "update"):
 
                 if step < 6:    #first tick
-                    next_state = agent.printLineData(self.state) #(0,1,2,34,4)
+                    next_state = agent.printLineData(self.state)
                     next_score = agent.scorito(self.state)
 
                 elif step > 5:  #second and next ticks
-                    state = state_prev
-                    next_state = agent.printLineData(self.state) #(0,1,2,34,4)
+                    tuplaState = state_prev
+                    next_state = agent.printLineData(self.state)
+
+                    pacman_next_position = self.state.getPacmanPosition()
+                    nearest_next_position = bustersAgents.closest_ghost(next_state)
+                    nearest_next_position = ##
                     next_score = agent.scorito(self.state)
+
+                    #TODO
+                    distancer = distanceCalculator.Distancer(self.state.data.layout)
+                    distancer.getDistance((1, 1), (10, 10))
+
+                    prevDistance = distancer.getDistance(pacman_position,nearest_position)
+                    nextDistance = distancer.getDistance(pacman_next_position,nearest_next_position)
+
 
                     reward = next_score - prev_score
                     if reward == 199:
@@ -731,10 +744,11 @@ class Game:
                     else:
                         reward = 0
 
-                    state.update(state, pacman_action, next_state, reward)
+                    agent.update(self.state, tuplaState, pacman_action, next_state, reward)
 
 
                 state_prev = next_state
+                pacman_position = pacman_next_position
                 prev_score = next_score
 
 
